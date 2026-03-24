@@ -35,5 +35,17 @@ pipeline {
                                 
             }
         }
+        stage('Cheking output') {
+            steps {
+               sh "docker ps"
+		       sh "docker compose ps"
+            }
+        }
+
+        stage('app working') {
+            steps {
+               sh "curl localhost:9010"
+            }
+        }
     }
 }
