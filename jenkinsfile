@@ -3,12 +3,13 @@ pipeline {
     triggers {
         pollSCM('H/2 * * * *')   // every 2 minutes
     }
-
+    
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/VasaviK23/Test.git',
-                    branch: 'main'
+                git branch: 'main',
+                        url: 'git@github.com:VasaviK23/Test.git',
+                        credentialsId: 'github-creds'
             }
         }
 
