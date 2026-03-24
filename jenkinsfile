@@ -17,12 +17,22 @@ pipeline {
             steps {
                 sh "docker --version"
                 sh "docker ps -a"
+                sh "docker compose --version"
             }
         }
 
-        stage('Test') {
+        stage('Docker Build') {
             steps {
-                echo "Test step here..."
+                echo "Docker Build step here..."
+                sh "docker build . -t pythonapp:v1"
+            }
+        }
+
+        stage('DockerContainer Creation') {
+            steps {
+                echo "running docker compose here..."
+                sh "docker compose up -d"
+                                
             }
         }
     }
