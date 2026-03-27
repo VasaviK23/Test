@@ -25,7 +25,14 @@ pipeline {
                 sh "docker-compose --version"
             }
         }
-
+        stage('Clean up old images and containers') {
+            steps {
+                sh "docker compose down"
+                sh "docker image prune -f"
+                sh "docker container prune -f"
+                sh "docker image rmi -f ${FULL_IMAGE_NAME} || true"
+            }
+        } 
         stage('Docker-Build') {
             steps {
                 echo "Docker Build Step here..."
@@ -73,7 +80,15 @@ pipeline {
 		        sh "kubectl apply -f py-redis-configmap/"
 		    }
 		}
+        stage('Status check') {
+		    steps {
+                sh "kubectl rollout status deployment/py-deploy"
+                sh "kubectl get pods"
+                sh "kubectl get svc"
+                sh "kubectl get deployments"
 
+		    }
+		}
         stage('App testing on kube env') {
             steps {
                sh "curl 192.168.49.2:30115"
