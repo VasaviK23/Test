@@ -3,7 +3,12 @@ pipeline {
     triggers {
         pollSCM('H/2 * * * *')   // every 2 minutes
     }
-    
+    environment {
+        REGISTRY = '774305610819.dkr.ecr.us-east-1.amazonaws.com'  // e.g., '123456789.dkr.ecr.us-east-1.amazonaws.com' for ECR
+        IMAGE_NAME = 'pythonapp'
+        TAG = "${BUILD_NUMBER}"
+        FULL_IMAGE_NAME = "${REGISTRY}/${IMAGE_NAME}:${TAG}"
+    }
     stages {
         stage('Clone Repository') {
             steps {
@@ -21,17 +26,17 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Docker-Build') {
             steps {
-                echo "Docker Build step here..."
-                sh "docker build . -t pythonapp:v1"
+                echo "Docker Build Step here..."
+                sh "docker build . -t ${FULL_IMAGE_NAME}"
             }
         }
 
         stage('DockerContainer Creation') {
             steps {
                 echo "running docker compose here..."
-                sh "docker compose up -d"
+                sh "envsubst < docker-compose.yaml | docker-compose -f - up -d"
                                 
             }
         }
@@ -47,12 +52,11 @@ pipeline {
                sh "curl localhost:9010"
             }
         }
-        stage('uploading image') {
+        stage('Image Push') {
             steps {
-               sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 774305610819.dkr.ecr.us-east-1.amazonaws.com"
-               sh "docker tag pythonapp:v1 774305610819.dkr.ecr.us-east-1.amazonaws.com/pythonapp:v1"
-               sh "docker push 774305610819.dkr.ecr.us-east-1.amazonaws.com/pythonapp:v1"
-
+                sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${REGISTRY}"
+                sh "docker tag pythonapp:v1 ${FULL_IMAGE_NAME}"
+                sh "docker push ${FULL_IMAGE_NAME}"
             }
         }
         stage('Check kube env') {
@@ -63,13 +67,12 @@ pipeline {
                 """
             }
         }
-        stage('deploy kube files') {
-            steps {
-                sh """
-                kubectl apply -f py-redis-configmap
-                """
-            }
-        }
+        stage('Deploy to Kubernetes') {
+		    steps {
+		        sh "sed -i 's|\${FULL_IMAGE_NAME}|${FULL_IMAGE_NAME}|g' py-redis-configmap/py-deploy.yaml"
+		        sh "kubectl apply -f py-redis-configmap/"
+		    }
+		}
 
         stage('App testing on kube env') {
             steps {
