@@ -17,7 +17,7 @@ pipeline {
             steps {
                 sh "docker --version"
                 sh "docker ps -a"
-                sh "docker compose --version"
+                sh "docker-compose --version"
             }
         }
 
@@ -55,9 +55,7 @@ pipeline {
 
             }
         }
-    }
-}
-stage('Check kube env') {
+        stage('Check kube env') {
             steps {
                 sh """
                 minikube status
@@ -78,4 +76,6 @@ stage('Check kube env') {
                sh "curl 192.168.49.2:30115"
             }
         }
-
+    }
+}
+        
